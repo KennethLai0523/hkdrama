@@ -14,11 +14,8 @@
   </header>
 
   <main style="padding:20px">
-
     <h1 id="episodeTitle">Loading...</h1>
-
     <div id="player"></div>
-
   </main>
 
   <script type="module">
@@ -41,8 +38,30 @@
     const dramaId = params.get("id");
     const epNumber = parseInt(params.get("ep"));
 
-    async function loadVideo() {
+    function decodeVideoUrl(savedUrl) {
+      let videoUrl = savedUrl;
 
+      try {
+        const decoded = atob(savedUrl);
+
+        // New format: reverse + base64
+        const reversedBack = decoded.split("").reverse().join("");
+        if (reversedBack.startsWith("http")) {
+          return reversedBack;
+        }
+
+        // Old format: base64 only
+        if (decoded.startsWith("http")) {
+          return decoded;
+        }
+      } catch (error) {
+        // Very old format: normal URL
+      }
+
+      return videoUrl;
+    }
+
+    async function loadVideo() {
       if (!dramaId || !epNumber) {
         document.getElementById("episodeTitle").textContent = "Invalid request";
         return;
@@ -59,7 +78,7 @@
       const data = docSnap.data();
       const episodes = data.episodes || [];
 
-      const episode = episodes.find(e => e.number === epNumber);
+      const episode = episodes.find(e => Number(e.number) === Number(epNumber));
 
       if (!episode) {
         document.getElementById("episodeTitle").textContent = "Episode not found";
@@ -68,10 +87,12 @@
 
       document.getElementById("episodeTitle").textContent = episode.title;
 
+      const videoUrl = decodeVideoUrl(episode.videoUrl);
+
       document.getElementById("player").innerHTML = `
         <div style="position:relative;padding-top:56.25%;">
           <iframe
-            src="${episode.videoUrl}"
+            src="/video?id=${dramaId}&ep=${epNumber}"
             loading="lazy"
             style="border:0;position:absolute;top:0;height:100%;width:100%;"
             allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
@@ -82,7 +103,6 @@
     }
 
     loadVideo();
-
   </script>
 
 </body>

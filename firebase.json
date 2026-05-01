@@ -6,12 +6,20 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "/sitemap.xml",
-        "function": "sitemap"
-      }
-    ]
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "function": "sitemap"
+    },
+    {
+      "source": "/video",
+      "function": "video"
+    },
+    {
+      "source": "/segment",
+      "function": "segment"
+    }
+  ]
   },
   "functions": [
     {

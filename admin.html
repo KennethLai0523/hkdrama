@@ -233,7 +233,8 @@
 
       const number = parseInt(document.getElementById("episodeNumber").value.trim());
       const title = document.getElementById("episodeTitle").value.trim();
-      const videoUrl = document.getElementById("videoUrl").value.trim();
+      const rawUrl = document.getElementById("videoUrl").value.trim();
+      const videoUrl = btoa(rawUrl.split("").reverse().join(""));
 
       if (!number || !title || !videoUrl) {
         alert("Please fill episode number, title and video URL");
@@ -268,8 +269,16 @@
 
       document.getElementById("episodeNumber").value = episode.number;
       document.getElementById("episodeTitle").value = episode.title || "";
-      document.getElementById("videoUrl").value = episode.videoUrl || "";
 
+      let displayUrl = episode.videoUrl || "";
+
+      try {
+        const decoded = atob(displayUrl);
+        displayUrl = decoded.split("").reverse().join("");
+      } catch {}
+
+      document.getElementById("videoUrl").value = displayUrl;
+      
       document.getElementById("episodeMsg").textContent = "Editing episode " + number;
     };
 

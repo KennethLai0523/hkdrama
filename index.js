@@ -3,7 +3,6 @@ const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-// 🔒 Fix XML special characters (VERY IMPORTANT)
 function escapeXml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -11,6 +10,19 @@ function escapeXml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function decodeVideoUrl(savedUrl) {
+  try {
+    const decoded = Buffer.from(savedUrl, "base64").toString("utf-8");
+
+    const reversedBack = decoded.split("").reverse().join("");
+    if (reversedBack.startsWith("http")) return reversedBack;
+
+    if (decoded.startsWith("http")) return decoded;
+  } catch (e) {}
+
+  return savedUrl;
 }
 
 exports.sitemap = functions.https.onRequest(async (req, res) => {
@@ -25,7 +37,6 @@ exports.sitemap = functions.https.onRequest(async (req, res) => {
     const data = doc.data();
     const dramaId = doc.id;
 
-    // ✅ Drama page
     urls += `
     <url>
       <loc>${escapeXml(`${siteUrl}/drama.html?id=${dramaId}`)}</loc>
@@ -33,7 +44,6 @@ exports.sitemap = functions.https.onRequest(async (req, res) => {
       <priority>0.8</priority>
     </url>`;
 
-    // ✅ Episode pages
     const episodes = data.episodes || [];
 
     episodes.forEach(ep => {
@@ -58,4 +68,79 @@ exports.sitemap = functions.https.onRequest(async (req, res) => {
 
   res.set("Content-Type", "application/xml");
   res.status(200).send(xml);
+});
+
+exports.video = functions.https.onRequest(async (req, res) => {
+  try {
+    const dramaId = req.query.id;
+    const epNumber = Number(req.query.ep);
+
+    if (!dramaId || !epNumber) {
+      return res.status(400).send("Missing id or ep");
+    }
+
+    const docSnap = await admin.firestore()
+      .collection("dramas")
+      .doc(dramaId)
+      .get();
+
+    if (!docSnap.exists) {
+      return res.status(404).send("Drama not found");
+    }
+
+    const data = docSnap.data();
+
+    const episode = (data.episodes || []).find(
+      ep => Number(ep.number) === Number(epNumber)
+    );
+
+    if (!episode || !episode.videoUrl) {
+      return res.status(404).send("Episode not found");
+    }
+
+    const realUrl = decodeVideoUrl(episode.videoUrl);
+
+    return res.redirect(302, realUrl);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(error.message);
+  }
+});
+
+exports.segment = functions.https.onRequest(async (req, res) => {
+  try {
+    const url = req.query.url;
+
+    if (!url) {
+      return res.status(400).send("Missing segment URL");
+    }
+
+    const fetch = (await import("node-fetch")).default;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": url,
+        "Origin": new URL(url).origin
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(500).send(
+        "Failed to fetch playlist. Status: " + response.status + " " + response.statusText
+      );
+    }
+
+    const buffer = await response.arrayBuffer();
+
+    res.set("Content-Type", "video/mp2t");
+    res.set("Cache-Control", "no-store");
+
+    return res.send(Buffer.from(buffer));
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send(error.message);
+  }
 });
