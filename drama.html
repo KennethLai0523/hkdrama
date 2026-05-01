@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drama Detail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">爱<span>看剧</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="#">连续剧</a>
+      <a href="#">综艺</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="drama-detail">
+      <img id="poster" src="" class="detail-poster" alt="Drama Poster">
+
+      <div>
+        <h1 id="title"></h1>
+        <p><strong>主演:</strong> <span id="actors">暂无</span></p>
+        <p><strong>分类:</strong> <span id="category">暂无</span></p>
+        <p><strong>年份:</strong> <span id="year"></span></p>
+        <p><strong>简介:</strong> <span id="description"></span></p>
+
+        <a id="playBtn" class="play-btn" href="#">立即播放</a>
+      </div>
+    </section>
+
+    <section class="episode-section">
+      <h2>播放集数</h2>
+      <div class="episode-grid" id="episodeGrid"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
+      authDomain: "drama-website-f6bd8.firebaseapp.com",
+      projectId: "drama-website-f6bd8",
+      storageBucket: "drama-website-f6bd8.firebasestorage.app",
+      messagingSenderId: "49077559897",
+      appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const dramaId = params.get("id");
+
+    async function loadDrama() {
+      if (!dramaId) {
+        document.querySelector("main").innerHTML = "<h2>Drama not found</h2>";
+        return;
+      }
+
+      const docRef = doc(db, "dramas", dramaId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        document.querySelector("main").innerHTML = "<h2>Drama not found</h2>";
+        return;
+      }
+
+      const data = docSnap.data();
+
+      document.getElementById("poster").src = data.poster || "";
+      document.getElementById("title").textContent = data.title || "";
+      document.getElementById("actors").textContent = data.actors || "暂无";
+      document.getElementById("category").textContent = data.category || "暂无";
+      document.getElementById("year").textContent = data.year || "";
+      document.getElementById("description").textContent = data.description || "";
+
+      const episodes = data.episodes || [];
+      const episodeGrid = document.getElementById("episodeGrid");
+
+      if (episodes.length > 0) {
+        document.getElementById("playBtn").href =
+          `watch.html?id=${dramaId}&ep=${episodes[0].number}`;
+
+        episodes.forEach((episode) => {
+          const a = document.createElement("a");
+          a.href = `watch.html?id=${dramaId}&ep=${episode.number}`;
+          a.textContent = episode.title || `第${episode.number}集`;
+          episodeGrid.appendChild(a);
+        });
+      } else {
+        document.getElementById("playBtn").style.display = "none";
+        episodeGrid.innerHTML = "<p>暂无集数</p>";
+      }
+    }
+
+    loadDrama();
+  </script>
+
+</body>
+</html>

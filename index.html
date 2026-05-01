@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hong Kong Drama Website</title>
+  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">爱<span>看剧</span></div>
+
+    <nav>
+      <a href="#">首页</a>
+      <a href="#">电影</a>
+      <a href="#">连续剧</a>
+      <a href="#">综艺</a>
+      <a href="#">动漫</a>
+    </nav>
+
+    <div class="search">
+      <input type="text" placeholder="请输入关键字">
+      <button>🔍</button>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="banner">
+      <h1>2026最新在线看</h1>
+      <p>立即观看</p>
+    </section>
+
+    <section class="category">
+      <a href="#">动作片</a>
+      <a href="#">喜剧片</a>
+      <a href="#">爱情片</a>
+      <a href="#">科幻片</a>
+      <a href="#">剧情片</a>
+      <a href="#">更多</a>
+    </section>
+
+    <h2 class="section-title">最新影片</h2>
+
+    <!-- AUTO LOAD HERE -->
+    <section class="movie-grid" id="movieList"></section>
+
+  </main>
+
+  <!-- FIREBASE SCRIPT -->
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
+      authDomain: "drama-website-f6bd8.firebaseapp.com",
+      projectId: "drama-website-f6bd8",
+      storageBucket: "drama-website-f6bd8.firebasestorage.app",
+      messagingSenderId: "49077559897",
+      appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const movieList = document.getElementById("movieList");
+
+    async function loadDramas() {
+      const snapshot = await getDocs(collection(db, "dramas"));
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        const card = document.createElement("div");
+        card.className = "movie-card";
+
+        card.innerHTML = `
+          <span class="rating">${data.rating || ""}</span>
+          <img src="${data.poster}" alt="${data.title}">
+          <h3>${data.title}</h3>
+          <p>${(data.description || "").substring(0, 15)}...</p>
+          <a href="drama.html?id=${doc.id}">现在观看</a>
+        `;
+
+        movieList.appendChild(card);
+      });
+    }
+
+    loadDramas();
+
+  </script>
+
+</body>
+</html>

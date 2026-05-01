@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Watch Episode</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">爱<span>看剧</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+    </nav>
+  </header>
+
+  <main style="padding:20px">
+
+    <h1 id="episodeTitle">Loading...</h1>
+
+    <div id="player"></div>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
+      authDomain: "drama-website-f6bd8.firebaseapp.com",
+      projectId: "drama-website-f6bd8",
+      storageBucket: "drama-website-f6bd8.firebasestorage.app",
+      messagingSenderId: "49077559897",
+      appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const dramaId = params.get("id");
+    const epNumber = parseInt(params.get("ep"));
+
+    async function loadVideo() {
+
+      if (!dramaId || !epNumber) {
+        document.getElementById("episodeTitle").textContent = "Invalid request";
+        return;
+      }
+
+      const docRef = doc(db, "dramas", dramaId);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        document.getElementById("episodeTitle").textContent = "Drama not found";
+        return;
+      }
+
+      const data = docSnap.data();
+      const episodes = data.episodes || [];
+
+      const episode = episodes.find(e => e.number === epNumber);
+
+      if (!episode) {
+        document.getElementById("episodeTitle").textContent = "Episode not found";
+        return;
+      }
+
+      document.getElementById("episodeTitle").textContent = episode.title;
+
+      document.getElementById("player").innerHTML = `
+        <div style="position:relative;padding-top:56.25%;">
+          <iframe
+            src="${episode.videoUrl}"
+            loading="lazy"
+            style="border:0;position:absolute;top:0;height:100%;width:100%;"
+            allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
+            allowfullscreen="true">
+          </iframe>
+        </div>
+      `;
+    }
+
+    loadVideo();
+
+  </script>
+
+</body>
+</html>

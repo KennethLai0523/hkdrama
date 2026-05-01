@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drama Admin</title>
+  <style>
+    body { font-family: Arial; background:#f5f5f5; padding:30px; }
+    .box { background:white; padding:25px; margin-bottom:25px; border-radius:10px; max-width:950px; }
+    input, textarea { width:100%; padding:12px; margin:8px 0; box-sizing:border-box; }
+    button { background:#ff6600; color:white; border:0; padding:10px 16px; cursor:pointer; border-radius:5px; margin:4px; }
+    button.secondary { background:#333; }
+    button.danger { background:#c0392b; }
+    .drama-item, .episode-item { padding:15px; border:1px solid #ddd; margin:10px 0; border-radius:6px; }
+    .drama-item:hover { background:#fff3e8; cursor:pointer; }
+    .selected { border-color:#ff6600; background:#fff3e8; }
+    small { color:#666; }
+  </style>
+</head>
+<body>
+
+  <h1>Drama Admin</h1>
+
+  <div class="box">
+    <h2>1. Create / Edit Drama</h2>
+
+    <input id="dramaId" placeholder="Drama ID e.g. drama3">
+    <input id="title" placeholder="Drama title">
+    <input id="poster" placeholder="Poster path e.g. images/poster3.jpg">
+    <input id="rating" placeholder="Rating e.g. 9.0">
+    <input id="year" placeholder="Year e.g. 2026">
+    <input id="actors" placeholder="Actors">
+    <input id="category" placeholder="Category e.g. 剧情片 / 司法">
+    <textarea id="description" placeholder="Description"></textarea>
+
+    <button onclick="saveDrama()">Save Drama</button>
+    <button class="secondary" onclick="clearDramaForm()">Clear</button>
+    <p id="createMsg"></p>
+  </div>
+
+  <div class="box">
+    <h2>2. Created Drama List</h2>
+    <div id="dramaList"></div>
+  </div>
+
+  <div class="box" id="episodeBox" style="display:none;">
+    <h2>3. Episodes For: <span id="selectedDramaTitle"></span></h2>
+
+    <input id="episodeNumber" placeholder="Episode number e.g. 1">
+    <input id="episodeTitle" placeholder="Episode title e.g. 第01集">
+    <input id="videoUrl" placeholder="Bunny video URL">
+
+    <button onclick="saveEpisode()">Save Episode</button>
+    <button class="secondary" onclick="clearEpisodeForm()">Clear Episode Form</button>
+
+    <h3>Existing Episodes</h3>
+    <div id="episodeList"></div>
+
+    <p id="episodeMsg"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+      setDoc,
+      getDoc,
+      updateDoc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
+      authDomain: "drama-website-f6bd8.firebaseapp.com",
+      projectId: "drama-website-f6bd8",
+      storageBucket: "drama-website-f6bd8.firebasestorage.app",
+      messagingSenderId: "49077559897",
+      appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let selectedDramaId = null;
+    let selectedDramaData = null;
+    let editingEpisodeNumber = null;
+
+    async function loadDramas() {
+      const dramaList = document.getElementById("dramaList");
+      dramaList.innerHTML = "";
+
+      const snapshot = await getDocs(collection(db, "dramas"));
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        const div = document.createElement("div");
+        div.className = "drama-item";
+        div.innerHTML = `
+          <strong>${data.title || docSnap.id}</strong><br>
+          <small>ID: ${docSnap.id}</small><br><br>
+          <button onclick="event.stopPropagation(); editDrama('${docSnap.id}')">Edit Drama</button>
+          <button class="danger" onclick="event.stopPropagation(); deleteDrama('${docSnap.id}')">Delete Drama</button>
+        `;
+
+        div.onclick = () => selectDrama(docSnap.id);
+        dramaList.appendChild(div);
+      });
+    }
+
+    window.saveDrama = async function () {
+      const dramaId = document.getElementById("dramaId").value.trim();
+
+      if (!dramaId) {
+        alert("Please enter Drama ID");
+        return;
+      }
+
+      const oldDoc = await getDoc(doc(db, "dramas", dramaId));
+      const oldEpisodes = oldDoc.exists() ? (oldDoc.data().episodes || []) : [];
+
+      const data = {
+        title: document.getElementById("title").value.trim(),
+        poster: document.getElementById("poster").value.trim(),
+        rating: document.getElementById("rating").value.trim(),
+        year: document.getElementById("year").value.trim(),
+        actors: document.getElementById("actors").value.trim(),
+        category: document.getElementById("category").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        episodes: oldEpisodes
+      };
+
+      await setDoc(doc(db, "dramas", dramaId), data);
+
+      document.getElementById("createMsg").textContent = "Drama saved successfully!";
+      await loadDramas();
+      await selectDrama(dramaId);
+    };
+
+    window.editDrama = async function (id) {
+      const docSnap = await getDoc(doc(db, "dramas", id));
+      if (!docSnap.exists()) return;
+
+      const data = docSnap.data();
+
+      document.getElementById("dramaId").value = id;
+      document.getElementById("title").value = data.title || "";
+      document.getElementById("poster").value = data.poster || "";
+      document.getElementById("rating").value = data.rating || "";
+      document.getElementById("year").value = data.year || "";
+      document.getElementById("actors").value = data.actors || "";
+      document.getElementById("category").value = data.category || "";
+      document.getElementById("description").value = data.description || "";
+
+      await selectDrama(id);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.deleteDrama = async function (id) {
+      if (!confirm("Delete this drama?")) return;
+
+      await deleteDoc(doc(db, "dramas", id));
+
+      if (selectedDramaId === id) {
+        selectedDramaId = null;
+        selectedDramaData = null;
+        document.getElementById("episodeBox").style.display = "none";
+      }
+
+      await loadDramas();
+    };
+
+    window.clearDramaForm = function () {
+      document.getElementById("dramaId").value = "";
+      document.getElementById("title").value = "";
+      document.getElementById("poster").value = "";
+      document.getElementById("rating").value = "";
+      document.getElementById("year").value = "";
+      document.getElementById("actors").value = "";
+      document.getElementById("category").value = "";
+      document.getElementById("description").value = "";
+      document.getElementById("createMsg").textContent = "";
+    };
+
+    async function selectDrama(id) {
+      selectedDramaId = id;
+
+      const docSnap = await getDoc(doc(db, "dramas", id));
+      if (!docSnap.exists()) return;
+
+      selectedDramaData = docSnap.data();
+
+      document.getElementById("episodeBox").style.display = "block";
+      document.getElementById("selectedDramaTitle").textContent = selectedDramaData.title || id;
+
+      clearEpisodeForm();
+      showEpisodes();
+    }
+
+    function showEpisodes() {
+      const episodeList = document.getElementById("episodeList");
+      episodeList.innerHTML = "";
+
+      const episodes = selectedDramaData.episodes || [];
+
+      if (episodes.length === 0) {
+        episodeList.innerHTML = "<p>No episodes yet.</p>";
+        return;
+      }
+
+      episodes
+        .sort((a, b) => Number(a.number) - Number(b.number))
+        .forEach(ep => {
+          const div = document.createElement("div");
+          div.className = "episode-item";
+          div.innerHTML = `
+            <strong>${ep.title}</strong><br>
+            Episode ${ep.number}<br>
+            <small>${ep.videoUrl}</small><br><br>
+            <button onclick="editEpisode(${ep.number})">Edit Episode</button>
+            <button class="danger" onclick="deleteEpisode(${ep.number})">Delete Episode</button>
+          `;
+          episodeList.appendChild(div);
+        });
+    }
+
+    window.saveEpisode = async function () {
+      if (!selectedDramaId) {
+        alert("Please select a drama first");
+        return;
+      }
+
+      const number = parseInt(document.getElementById("episodeNumber").value.trim());
+      const title = document.getElementById("episodeTitle").value.trim();
+      const videoUrl = document.getElementById("videoUrl").value.trim();
+
+      if (!number || !title || !videoUrl) {
+        alert("Please fill episode number, title and video URL");
+        return;
+      }
+
+      let episodes = selectedDramaData.episodes || [];
+
+      episodes = episodes.filter(ep => Number(ep.number) !== Number(number));
+
+      episodes.push({
+        number,
+        title,
+        videoUrl
+      });
+
+      episodes.sort((a, b) => Number(a.number) - Number(b.number));
+
+      await updateDoc(doc(db, "dramas", selectedDramaId), {
+        episodes
+      });
+
+      document.getElementById("episodeMsg").textContent = "Episode saved successfully!";
+      await selectDrama(selectedDramaId);
+    };
+
+    window.editEpisode = function (number) {
+      const episode = (selectedDramaData.episodes || []).find(ep => Number(ep.number) === Number(number));
+      if (!episode) return;
+
+      editingEpisodeNumber = number;
+
+      document.getElementById("episodeNumber").value = episode.number;
+      document.getElementById("episodeTitle").value = episode.title || "";
+      document.getElementById("videoUrl").value = episode.videoUrl || "";
+
+      document.getElementById("episodeMsg").textContent = "Editing episode " + number;
+    };
+
+    window.deleteEpisode = async function (number) {
+      if (!confirm("Delete this episode?")) return;
+
+      let episodes = selectedDramaData.episodes || [];
+      episodes = episodes.filter(ep => Number(ep.number) !== Number(number));
+
+      await updateDoc(doc(db, "dramas", selectedDramaId), {
+        episodes
+      });
+
+      document.getElementById("episodeMsg").textContent = "Episode deleted.";
+      await selectDrama(selectedDramaId);
+    };
+
+    window.clearEpisodeForm = function () {
+      editingEpisodeNumber = null;
+      document.getElementById("episodeNumber").value = "";
+      document.getElementById("episodeTitle").value = "";
+      document.getElementById("videoUrl").value = "";
+      document.getElementById("episodeMsg").textContent = "";
+    };
+
+    loadDramas();
+  </script>
+
+</body>
+</html>
