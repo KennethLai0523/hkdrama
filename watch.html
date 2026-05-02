@@ -3,6 +3,7 @@
 <head>
   <title>Watch Episode</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
 
@@ -87,19 +88,28 @@
 
       document.getElementById("episodeTitle").textContent = episode.title;
 
-      const videoUrl = decodeVideoUrl(episode.videoUrl);
+      let videoUrl = decodeVideoUrl(episode.videoUrl);
+
+      // add random characters behind the .m3u8 URL
+      // add random query + fragment behind the .m3u8 URL
+      const randomText = Math.random().toString(36).substring(2, 12);
+
+      videoUrl += (videoUrl.includes("?") ? "&" : "?") + "r=" + randomText;
+      videoUrl += "#mask=" + randomText;
 
       document.getElementById("player").innerHTML = `
-        <div style="position:relative;padding-top:56.25%;">
-          <iframe
-            src="/video?id=${dramaId}&ep=${epNumber}"
-            loading="lazy"
-            style="border:0;position:absolute;top:0;height:100%;width:100%;"
-            allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
-            allowfullscreen="true">
-          </iframe>
-        </div>
+        <video id="video" controls style="width:100%;height:100%;"></video>
       `;
+
+      const video = document.getElementById("video");
+
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoUrl); // 🔥 USE YOUR DECODED URL HERE
+        hls.attachMedia(video);
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoUrl;
+      }
     }
 
     loadVideo();
