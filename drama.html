@@ -3,17 +3,92 @@
 <head>
   <title>Drama Detail</title>
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    @media (max-width: 900px) {
+      #header .topbar {
+        height: auto !important;
+        padding: 10px 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        overflow: visible !important;
+      }
+
+      #header .logo {
+        font-size: 24px !important;
+        padding: 6px 10px !important;
+      }
+
+      #header nav {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        width: 100% !important;
+      }
+
+      #header nav a {
+        font-size: 14px !important;
+        white-space: nowrap !important;
+      }
+
+      #header .ad-contact {
+        margin: 0 !important;
+        font-size: 12px !important;
+        text-align: center !important;
+        white-space: normal !important;
+        width: 100% !important;
+      }
+
+      #header .search {
+        margin: 0 !important;
+        width: 90% !important;
+        max-width: 320px !important;
+        justify-content: space-between !important;
+      }
+
+      #header .search input {
+        width: 100% !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="logo">爱<span>看剧</span></div>
-    <nav>
-      <a href="index.html">首页</a>
-      <a href="#">连续剧</a>
-      <a href="#">综艺</a>
-    </nav>
-  </header>
+  <div id="header"></div>
+
+  <script>
+    fetch("header.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("header").innerHTML = html;
+
+        const input = document.getElementById("searchInput");
+        const button = document.getElementById("searchBtn");
+
+        function doSearch() {
+          const keyword = input.value.trim();
+
+          if (!keyword) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          window.location.href = "index.html?search=" + encodeURIComponent(keyword);
+        }
+
+        button.addEventListener("click", doSearch);
+
+        input.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") {
+            doSearch();
+          }
+        });
+      });
+  </script>
 
   <main>
     <section class="drama-detail">
@@ -100,5 +175,14 @@
     loadDrama();
   </script>
 
+<div id="footer"></div>
+
+<script>
+  fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer").innerHTML = html;
+    });
+</script>
 </body>
 </html>
