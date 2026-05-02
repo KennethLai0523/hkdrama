@@ -1,0 +1,408 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  color: #222;
+}
+
+.topbar {
+  height: 70px;
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 0 12%;
+  gap: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+  background: #111;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.logo span {
+  color: #ff8800;
+}
+
+nav {
+  display: flex;
+  gap: 22px;
+}
+
+nav a {
+  color: #333;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+nav a:hover {
+  color: #ff6600;
+}
+
+.search {
+  margin-left: auto;
+  display: flex;
+  background: #f1f1f1;
+  border-radius: 20px;
+  padding: 5px 10px;
+}
+
+.search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 180px;
+}
+
+.search button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+main {
+  width: 70%;
+  margin: 0 auto;
+}
+
+.banner {
+  margin-top: 25px;
+  height: 210px;
+  background: linear-gradient(90deg, #ff7a00, #ffb000);
+  border-radius: 8px;
+  padding: 40px;
+  color: white;
+}
+
+.banner h1 {
+  font-size: 46px;
+  margin: 0;
+}
+
+.banner p {
+  font-size: 20px;
+}
+
+.category {
+  margin: 40px 0 20px;
+  text-align: right;
+}
+
+.category a {
+  margin-left: 18px;
+  color: #333;
+  text-decoration: none;
+}
+
+.category a:hover {
+  color: #ff6600;
+}
+
+.section-title {
+  margin-bottom: 20px;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 28px;
+}
+
+.movie-card {
+  position: relative;
+}
+
+.movie-card img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 7px;
+  background: #ddd;
+  transition: transform 0.2s;
+}
+
+.movie-card:hover img {
+  transform: scale(1.04);
+}
+
+.rating {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #ff6600;
+  color: white;
+  padding: 3px 8px;
+  font-weight: bold;
+  border-radius: 5px 0 5px 0;
+  z-index: 2;
+}
+
+.movie-card h3 {
+  margin: 10px 0 5px;
+  font-size: 16px;
+}
+
+.movie-card p {
+  color: #777;
+  font-size: 13px;
+  margin: 0 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-card a {
+  color: #ff6600;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.drama-detail {
+  display: flex;
+  gap: 30px;
+  margin-top: 40px;
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+}
+
+.detail-poster {
+  width: 180px;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.play-btn {
+  display: inline-block;
+  margin-top: 20px;
+  background: #ff6600;
+  color: white;
+  padding: 12px 28px;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.episode-section {
+  margin-top: 40px;
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+}
+
+.episode-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.episode-grid a {
+  border: 1px solid #ddd;
+  padding: 14px;
+  text-align: center;
+  text-decoration: none;
+  color: #333;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.episode-grid a:hover {
+  background: #ff6600;
+  color: white;
+}
+
+.site-footer {
+  background: #111;
+  color: #ccc;
+  margin-top: 50px;
+  padding: 40px 12% 18px;
+}
+
+.footer-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 1.5fr;
+  gap: 35px;
+}
+
+.footer-logo {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: bold;
+  background: white;
+  color: #111;
+  padding: 6px 12px;
+  border-radius: 5px;
+  margin-bottom: 12px;
+}
+
+.footer-logo span {
+  color: #ff8800;
+}
+
+.site-footer h3 {
+  color: white;
+  margin-bottom: 12px;
+}
+
+.site-footer p {
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.footer-links a {
+  display: block;
+  color: #ccc;
+  text-decoration: none;
+  margin: 8px 0;
+}
+
+.footer-links a:hover {
+  color: #ff8800;
+}
+
+.footer-bottom {
+  border-top: 1px solid #333;
+  margin-top: 28px;
+  padding-top: 15px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.ad-contact {
+  font-size: 13px;
+  color: #555;
+  margin-left: 20px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.ad-contact a {
+  color: #ff6600;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.ad-contact a:hover {
+  text-decoration: underline;
+}
+
+.poster-link {
+  display: block;
+}
+
+.poster-link img {
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    height: auto;
+    padding: 15px;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  nav {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .search {
+    margin-left: 0;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .search input {
+    width: 100%;
+  }
+
+  main {
+    width: 94%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .banner {
+    height: auto;
+    padding: 35px 20px;
+    text-align: center;
+  }
+
+  .banner h1 {
+    font-size: 28px;
+  }
+
+  .category {
+    text-align: center;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 25px 0;
+  }
+
+  .category a {
+    margin-left: 0;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  .movie-card {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .movie-card img {
+    width: 100%;
+    height: auto !important;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .movie-card h3 {
+    font-size: 14px;
+  }
+
+  .drama-detail {
+    flex-direction: column;
+  }
+
+  .episode-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .site-footer {
+    padding: 30px 20px 15px;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
