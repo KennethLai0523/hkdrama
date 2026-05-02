@@ -313,21 +313,33 @@ main {
 
   .topbar {
     height: auto;
-    padding: 15px;
+    padding: 10px 12px;
+    display: flex;
     flex-direction: column;
-    gap: 12px;
-    text-align: center;
+    align-items: center;
+    gap: 10px;
   }
 
+  /* NAV */
   nav {
+    display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
   }
 
+  /* 🔥 FIX ad contact */
+  .ad-contact {
+    margin: 0;
+    font-size: 12px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  /* 🔥 FIX search */
   .search {
-    margin-left: 0;
-    width: 100%;
+    margin: 0;
+    width: 90%;
     max-width: 320px;
   }
 

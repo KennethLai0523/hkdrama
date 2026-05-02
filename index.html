@@ -10,22 +10,37 @@
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="logo">爱<span>看剧</span></div>
+  <div id="header"></div>
 
-    <nav>
-      <a href="#">首页</a>
-      <a href="#">电影</a>
-      <a href="#">连续剧</a>
-      <a href="#">综艺</a>
-      <a href="#">动漫</a>
-    </nav>
+  <script>
+    fetch("header.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("header").innerHTML = html;
 
-    <div class="search">
-      <input type="text" placeholder="请输入关键字">
-      <button>🔍</button>
-    </div>
-  </header>
+        const input = document.getElementById("searchInput");
+        const button = document.getElementById("searchBtn");
+
+        function doSearch() {
+          const keyword = input.value.trim();
+
+          if (!keyword) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          window.location.href = "index.html?search=" + encodeURIComponent(keyword);
+        }
+
+        button.addEventListener("click", doSearch);
+
+        input.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") {
+            doSearch();
+          }
+        });
+      });
+  </script>
 
   <main>
 
@@ -70,30 +85,58 @@
 
     const movieList = document.getElementById("movieList");
 
-    async function loadDramas() {
-      const snapshot = await getDocs(collection(db, "dramas"));
+  async function loadDramas() {
+    movieList.innerHTML = "";
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+    const params = new URLSearchParams(window.location.search);
+    const selectedCategory = params.get("category");
+    const searchKeyword = params.get("search");
 
-        const card = document.createElement("div");
-        card.className = "movie-card";
+    const snapshot = await getDocs(collection(db, "dramas"));
 
-        card.innerHTML = `
-          <span class="rating">${data.rating || ""}</span>
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+
+      if (selectedCategory && data.category !== selectedCategory) {
+        return;
+      }
+
+      if (searchKeyword && !(data.title || "").toLowerCase().includes(searchKeyword.toLowerCase())) {
+        return;
+      }
+
+      const card = document.createElement("div");
+      card.className = "movie-card";
+
+      card.innerHTML = `
+        <span class="rating">${data.rating || ""}</span>
+        
+        <a href="drama.html?id=${doc.id}" class="poster-link">
           <img src="${data.poster}" alt="${data.title}">
-          <h3>${data.title}</h3>
-          <p>${(data.description || "").substring(0, 15)}...</p>
-          <a href="drama.html?id=${doc.id}">现在观看</a>
-        `;
+        </a>
 
-        movieList.appendChild(card);
-      });
-    }
+        <h3>${data.title}</h3>
+        <p>${(data.description || "").substring(0, 15)}...</p>
+        <a href="drama.html?id=${doc.id}">现在观看</a>
+      `;
+
+      movieList.appendChild(card);
+    });
+  }
 
     loadDramas();
 
   </script>
+
+<div id="footer"></div>
+
+<script>
+  fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer").innerHTML = html;
+    });
+</script>
 
 </body>
 </html>

@@ -1,119 +1,291 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <title>Watch Episode</title>
+  <meta charset="UTF-8">
+  <title>正在播放 - 爱看剧</title>
+  <meta name="description" content="爱看剧在线播放电视剧、电影、综艺、动漫。">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <style>
+    .watch-page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    .watch-header {
+      margin-bottom: 20px;
+    }
+
+    .watch-category {
+      display: inline-block;
+      background: #ff8800;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .watch-title {
+      font-size: 30px;
+      margin: 8px 0;
+      color: #111;
+    }
+
+    .watch-episode {
+      font-size: 18px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .watch-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .drama-info {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+
+    .drama-info img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .drama-info h2 {
+      font-size: 20px;
+      margin: 8px 0;
+    }
+
+    .drama-info p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    #player {
+      background: #000;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+
+    @media (max-width: 768px) {
+      .watch-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .watch-title {
+        font-size: 24px;
+      }
+
+      .drama-info {
+        display: none;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-  <header class="topbar">
-    <div class="logo">爱<span>看剧</span></div>
-    <nav>
-      <a href="index.html">首页</a>
-    </nav>
-  </header>
+<div id="header"></div>
 
-  <main style="padding:20px">
-    <h1 id="episodeTitle">Loading...</h1>
+<script>
+  fetch("header.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("header").innerHTML = html;
+
+      const input = document.getElementById("searchInput");
+      const button = document.getElementById("searchBtn");
+
+      function doSearch() {
+        const keyword = input.value.trim();
+
+        if (!keyword) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        window.location.href = "index.html?search=" + encodeURIComponent(keyword);
+      }
+
+      button.addEventListener("click", doSearch);
+
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          doSearch();
+        }
+      });
+    });
+</script>
+
+<main class="watch-page">
+
+  <section class="watch-header">
+    <div id="categoryBadge" class="watch-category" style="display:none;"></div>
+    <h1 id="dramaTitle" class="watch-title">Loading...</h1>
+    <div id="episodeTitle" class="watch-episode"></div>
+  </section>
+
+  <section class="watch-layout">
+
+    <aside class="drama-info">
+      <img id="dramaPoster" src="" alt="" style="display:none;">
+      <h2 id="sideDramaTitle"></h2>
+      <p id="dramaDescription"></p>
+    </aside>
+
     <div id="player"></div>
-  </main>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  </section>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
-      authDomain: "drama-website-f6bd8.firebaseapp.com",
-      projectId: "drama-website-f6bd8",
-      storageBucket: "drama-website-f6bd8.firebasestorage.app",
-      messagingSenderId: "49077559897",
-      appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
-    };
+</main>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const params = new URLSearchParams(window.location.search);
-    const dramaId = params.get("id");
-    const epNumber = parseInt(params.get("ep"));
+  const firebaseConfig = {
+    apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
+    authDomain: "drama-website-f6bd8.firebaseapp.com",
+    projectId: "drama-website-f6bd8",
+    storageBucket: "drama-website-f6bd8.firebasestorage.app",
+    messagingSenderId: "49077559897",
+    appId: "1:49077559897:web:4c248dff8957b3b2cb0748"
+  };
 
-    function decodeVideoUrl(savedUrl) {
-      let videoUrl = savedUrl;
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-      try {
-        const decoded = atob(savedUrl);
+  const params = new URLSearchParams(window.location.search);
+  const dramaId = params.get("id");
+  const epNumber = parseInt(params.get("ep"));
 
-        // New format: reverse + base64
-        const reversedBack = decoded.split("").reverse().join("");
-        if (reversedBack.startsWith("http")) {
-          return reversedBack;
-        }
+  function decodeVideoUrl(savedUrl) {
+    try {
+      const decoded = atob(savedUrl);
 
-        // Old format: base64 only
-        if (decoded.startsWith("http")) {
-          return decoded;
-        }
-      } catch (error) {
-        // Very old format: normal URL
-      }
+      const reversedBack = decoded.split("").reverse().join("");
+      if (reversedBack.startsWith("http")) return reversedBack;
 
-      return videoUrl;
+      if (decoded.startsWith("http")) return decoded;
+    } catch (error) {}
+
+    return savedUrl;
+  }
+
+  function updateSeoTitle(dramaTitle, episodeTitle) {
+    const pageTitle = `${dramaTitle} ${episodeTitle} 在线观看 - 爱看剧`;
+    document.title = pageTitle;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement("meta");
+      metaDescription.name = "description";
+      document.head.appendChild(metaDescription);
     }
 
-    async function loadVideo() {
-      if (!dramaId || !epNumber) {
-        document.getElementById("episodeTitle").textContent = "Invalid request";
-        return;
-      }
+    metaDescription.content = `${dramaTitle} ${episodeTitle} 在线播放，免费观看高清港剧、电影、连续剧、综艺和动漫。`;
+  }
 
-      const docRef = doc(db, "dramas", dramaId);
-      const docSnap = await getDoc(docRef);
-
-      if (!docSnap.exists()) {
-        document.getElementById("episodeTitle").textContent = "Drama not found";
-        return;
-      }
-
-      const data = docSnap.data();
-      const episodes = data.episodes || [];
-
-      const episode = episodes.find(e => Number(e.number) === Number(epNumber));
-
-      if (!episode) {
-        document.getElementById("episodeTitle").textContent = "Episode not found";
-        return;
-      }
-
-      document.getElementById("episodeTitle").textContent = episode.title;
-
-      let videoUrl = decodeVideoUrl(episode.videoUrl);
-
-      // add random characters behind the .m3u8 URL
-      // add random query + fragment behind the .m3u8 URL
-      const randomText = Math.random().toString(36).substring(2, 12);
-
-      videoUrl += (videoUrl.includes("?") ? "&" : "?") + "r=" + randomText;
-      videoUrl += "#mask=" + randomText;
-
-      document.getElementById("player").innerHTML = `
-        <video id="video" controls style="width:100%;height:100%;"></video>
-      `;
-
-      const video = document.getElementById("video");
-
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoUrl); // 🔥 USE YOUR DECODED URL HERE
-        hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoUrl;
-      }
+  async function loadVideo() {
+    if (!dramaId || !epNumber) {
+      document.getElementById("dramaTitle").textContent = "Invalid request";
+      return;
     }
 
-    loadVideo();
-  </script>
+    const docRef = doc(db, "dramas", dramaId);
+    const docSnap = await getDoc(docRef);
 
+    if (!docSnap.exists()) {
+      document.getElementById("dramaTitle").textContent = "Drama not found";
+      return;
+    }
+
+    const data = docSnap.data();
+    const episodes = data.episodes || [];
+    const episode = episodes.find(e => Number(e.number) === Number(epNumber));
+
+    if (!episode) {
+      document.getElementById("dramaTitle").textContent = "Episode not found";
+      return;
+    }
+
+    const dramaTitle = data.title || dramaId;
+    const episodeTitle = episode.title || `第${epNumber}集`;
+
+    document.getElementById("dramaTitle").textContent = dramaTitle;
+    document.getElementById("episodeTitle").textContent = episodeTitle;
+
+    document.getElementById("sideDramaTitle").textContent = dramaTitle;
+    document.getElementById("dramaDescription").textContent = data.description || "";
+
+    if (data.category) {
+      const badge = document.getElementById("categoryBadge");
+      badge.textContent = data.category;
+      badge.style.display = "inline-block";
+    }
+
+    if (data.poster) {
+      const poster = document.getElementById("dramaPoster");
+      poster.src = data.poster;
+      poster.alt = dramaTitle;
+      poster.style.display = "block";
+    }
+
+    updateSeoTitle(dramaTitle, episodeTitle);
+
+    let videoUrl = decodeVideoUrl(episode.videoUrl);
+
+    const randomText = Math.random().toString(36).substring(2, 12);
+    videoUrl += (videoUrl.includes("?") ? "&" : "?") + "r=" + randomText;
+    videoUrl += "#mask=" + randomText;
+
+    document.getElementById("player").innerHTML = `
+      <video id="video" controls playsinline></video>
+    `;
+
+    const video = document.getElementById("video");
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(videoUrl);
+      hls.attachMedia(video);
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = videoUrl;
+    }
+  }
+
+  loadVideo();
+</script>
+
+<div id="footer"></div>
+
+<script>
+  fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer").innerHTML = html;
+    });
+</script>
 </body>
 </html>

@@ -5,7 +5,7 @@
   <style>
     body { font-family: Arial; background:#f5f5f5; padding:30px; }
     .box { background:white; padding:25px; margin-bottom:25px; border-radius:10px; max-width:950px; }
-    input, textarea { width:100%; padding:12px; margin:8px 0; box-sizing:border-box; }
+    input, textarea, select { width:100%; padding:12px; margin:8px 0; box-sizing:border-box; }
     button { background:#ff6600; color:white; border:0; padding:10px 16px; cursor:pointer; border-radius:5px; margin:4px; }
     button.secondary { background:#333; }
     button.danger { background:#c0392b; }
@@ -13,22 +13,70 @@
     .drama-item:hover { background:#fff3e8; cursor:pointer; }
     .selected { border-color:#ff6600; background:#fff3e8; }
     small { color:#666; }
+
+select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  background: white;
+  cursor: pointer;
+}
   </style>
 </head>
-<body>
+<body style="display:none;">
+
+  <!-- LOGIN BOX -->
+  <div id="loginBox" class="box" style="max-width:400px;">
+    <h2>Admin Login</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg"></p>
+  </div>
+
+  <!-- MAIN ADMIN (HIDDEN FIRST) -->
+  <div id="adminContent" style="display:none;">
 
   <h1>Drama Admin</h1>
 
   <div class="box">
     <h2>1. Create / Edit Drama</h2>
 
-    <input id="dramaId" placeholder="Drama ID e.g. drama3">
+    <input id="dramaId" placeholder="Auto Generated - Drama ID" readonly>
     <input id="title" placeholder="Drama title">
-    <input id="poster" placeholder="Poster path e.g. images/poster3.jpg">
-    <input id="rating" placeholder="Rating e.g. 9.0">
+
+    <div id="posterDrop" style="
+      border:2px dashed #999;
+      padding:25px;
+      text-align:center;
+      margin:8px 0;
+      border-radius:8px;
+      background:#fafafa;
+    ">
+      Drag & drop poster here or click to upload
+      <br><br>
+      <img id="posterPreview" style="max-width:160px; display:none; border-radius:6px;">
+    </div>
+
+    <input type="file" id="posterFile" accept="image/*" style="display:none;">
+    <input type="hidden" id="poster">
+
+    <input id="rating" placeholder="Auto Generated - Rating">
     <input id="year" placeholder="Year e.g. 2026">
     <input id="actors" placeholder="Actors">
-    <input id="category" placeholder="Category e.g. 剧情片 / 司法">
+
+    <select id="category">
+      <option value="">Select category</option>
+      <option value="电影">电影</option>
+      <option value="连续剧">连续剧</option>
+      <option value="综艺">综艺</option>
+      <option value="动漫">动漫</option>
+    </select>
+
     <textarea id="description" placeholder="Description"></textarea>
 
     <button onclick="saveDrama()">Save Drama</button>
@@ -46,7 +94,7 @@
 
     <input id="episodeNumber" placeholder="Episode number e.g. 1">
     <input id="episodeTitle" placeholder="Episode title e.g. 第01集">
-    <input id="videoUrl" placeholder="Bunny video URL">
+    <textarea id="videoUrl" placeholder="Paste URLs (one per line)" rows="6"></textarea>
 
     <button onclick="saveEpisode()">Save Episode</button>
     <button class="secondary" onclick="clearEpisodeForm()">Clear Episode Form</button>
@@ -70,6 +118,19 @@
       deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyBD7Zlt2I_I1v1kHFgymewHHDTE3dJxvMk",
       authDomain: "drama-website-f6bd8.firebaseapp.com",
@@ -81,6 +142,10 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+  const storage = getStorage(app);
+  let uploadedPosterUrl = "";
 
     let selectedDramaId = null;
     let selectedDramaData = null;
@@ -109,13 +174,82 @@
       });
     }
 
-    window.saveDrama = async function () {
-      const dramaId = document.getElementById("dramaId").value.trim();
+      const posterDrop = document.getElementById("posterDrop");
+      const posterFile = document.getElementById("posterFile");
 
-      if (!dramaId) {
-        alert("Please enter Drama ID");
-        return;
+      posterDrop.onclick = () => posterFile.click();
+
+      posterDrop.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        posterDrop.style.background = "#fff3e8";
+      });
+
+      posterDrop.addEventListener("dragleave", () => {
+        posterDrop.style.background = "#fafafa";
+      });
+
+      posterDrop.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        posterDrop.style.background = "#fafafa";
+
+        const file = e.dataTransfer.files[0];
+        if (file) await uploadPoster(file);
+      });
+
+      posterFile.addEventListener("change", async () => {
+        const file = posterFile.files[0];
+        if (file) await uploadPoster(file);
+      });
+
+      async function uploadPoster(file) {
+        const dramaTitle = document.getElementById("title").value.trim() || "untitled";
+        const fileName = dramaTitle.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now();
+
+        const storageRef = ref(storage, "posters/" + fileName);
+        await uploadBytes(storageRef, file);
+
+        uploadedPosterUrl = await getDownloadURL(storageRef);
+
+        document.getElementById("poster").value = uploadedPosterUrl;
+
+        const preview = document.getElementById("posterPreview");
+        preview.src = uploadedPosterUrl;
+        preview.style.display = "block";
+
+        posterDrop.innerHTML = `
+          Poster uploaded successfully<br><br>
+          <img id="posterPreview" src="${uploadedPosterUrl}" style="max-width:160px; border-radius:6px;">
+        `;
       }
+
+function makeDramaId(title) {
+  const cleanTitle = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return cleanTitle + "-" + Date.now();
+}
+
+function randomRating() {
+  return (Math.random() * 3 + 7).toFixed(1);
+}
+
+    window.saveDrama = async function () {
+    const title = document.getElementById("title").value.trim();
+
+    if (!title) {
+      alert("Please enter drama title");
+      return;
+    }
+
+    let dramaId = document.getElementById("dramaId").value.trim();
+
+    if (!dramaId) {
+      dramaId = makeDramaId(title);
+      document.getElementById("dramaId").value = dramaId;
+    }
 
       const oldDoc = await getDoc(doc(db, "dramas", dramaId));
       const oldEpisodes = oldDoc.exists() ? (oldDoc.data().episodes || []) : [];
@@ -123,7 +257,7 @@
       const data = {
         title: document.getElementById("title").value.trim(),
         poster: document.getElementById("poster").value.trim(),
-        rating: document.getElementById("rating").value.trim(),
+        rating: document.getElementById("rating").value.trim() || randomRating(),
         year: document.getElementById("year").value.trim(),
         actors: document.getElementById("actors").value.trim(),
         category: document.getElementById("category").value.trim(),
@@ -146,7 +280,16 @@
 
       document.getElementById("dramaId").value = id;
       document.getElementById("title").value = data.title || "";
-      document.getElementById("poster").value = data.poster || "";
+
+        document.getElementById("poster").value = data.poster || "";
+
+        if (data.poster) {
+          posterDrop.innerHTML = `
+            Current poster<br><br>
+            <img id="posterPreview" src="${data.poster}" style="max-width:160px; border-radius:6px;">
+          `;
+        }
+
       document.getElementById("rating").value = data.rating || "";
       document.getElementById("year").value = data.year || "";
       document.getElementById("actors").value = data.actors || "";
@@ -225,31 +368,64 @@
         });
     }
 
+function getNextEpisodeNumber() {
+  const episodes = selectedDramaData.episodes || [];
+
+  if (episodes.length === 0) return 1;
+
+  const maxNumber = Math.max(...episodes.map(ep => Number(ep.number) || 0));
+  return maxNumber + 1;
+}
+
+function formatEpisodeTitle(number) {
+  return "第" + String(number).padStart(2, "0") + "集";
+}
+
     window.saveEpisode = async function () {
       if (!selectedDramaId) {
         alert("Please select a drama first");
         return;
       }
 
-      const number = parseInt(document.getElementById("episodeNumber").value.trim());
-      const title = document.getElementById("episodeTitle").value.trim();
-      const rawUrl = document.getElementById("videoUrl").value.trim();
-      const videoUrl = btoa(rawUrl.split("").reverse().join(""));
+      let number = parseInt(document.getElementById("episodeNumber").value.trim());
+      let title = document.getElementById("episodeTitle").value.trim();
 
-      if (!number || !title || !videoUrl) {
-        alert("Please fill episode number, title and video URL");
+
+      const rawInput = document.getElementById("videoUrl").value.trim();
+
+      if (!rawInput) {
+        alert("Please fill video URL");
         return;
       }
 
+      // split by line
+      const urls = rawInput
+        .split("\n")
+        .map(u => u.trim())
+        .filter(u => u !== "");
+
+      // get current episodes
       let episodes = selectedDramaData.episodes || [];
 
-      episodes = episodes.filter(ep => Number(ep.number) !== Number(number));
+      // starting number
+      let startNumber = number || getNextEpisodeNumber();
 
-      episodes.push({
-        number,
-        title,
-        videoUrl
+      urls.forEach((url, index) => {
+        const epNumber = startNumber + index;
+
+        const encodedUrl = btoa(url.split("").reverse().join(""));
+
+        // remove if exist (overwrite)
+        episodes = episodes.filter(ep => Number(ep.number) !== epNumber);
+
+        episodes.push({
+          number: epNumber,
+          title: formatEpisodeTitle(epNumber),
+          videoUrl: encodedUrl
+        });
       });
+
+
 
       episodes.sort((a, b) => Number(a.number) - Number(b.number));
 
@@ -259,6 +435,9 @@
 
       document.getElementById("episodeMsg").textContent = "Episode saved successfully!";
       await selectDrama(selectedDramaId);
+
+      // ✅ ADD HERE
+      document.getElementById("videoUrl").value = "";
     };
 
     window.editEpisode = function (number) {
@@ -304,8 +483,36 @@
       document.getElementById("episodeMsg").textContent = "";
     };
 
+window.login = async function () {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById("loginMsg").textContent = "";
+  } catch (err) {
+    document.getElementById("loginMsg").textContent = err.message;
+  }
+};
+
+
+onAuthStateChanged(auth, (user) => {
+
+  // 🔥 SHOW PAGE AFTER CHECK
+  document.body.style.display = "block";
+
+  if (user) {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminContent").style.display = "block";
     loadDramas();
+  } else {
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("adminContent").style.display = "none";
+  }
+});
+
   </script>
 
+  </div> <!-- end adminContent -->
 </body>
 </html>
